@@ -94,6 +94,9 @@ table.log tr:last-child td{border-bottom:0}
 .pill{display:inline-block;font-size:12px;padding:0 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .pill.w{background:var(--warn-soft);color:var(--warn)}
 footer{color:var(--muted);font-size:13px}
+.toggle{font:inherit;font-family:var(--mono);font-size:13px;cursor:pointer;border:1px solid var(--accent);color:var(--accent);background:transparent;padding:3px 10px;border-radius:999px}
+.toggle[aria-pressed="true"]{background:var(--accent);color:var(--paper)}
+body.clean .notes,body.clean .meta,body.clean .notice,body.clean header p,body.clean .layerkey,body.clean footer,body.clean #log{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -102,21 +105,22 @@ footer{color:var(--muted);font-size:13px}
   <div class="eyebrow">5.1.3 · Ask User Question 教學畫面</div>
   <h1>透過 AutoCAD MCP 讀取柱圖層：Q3、Q6、Q9 執行對話</h1>
   <p>依《5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱》第 4 節 Ask User Question 規格，模擬 Claude Code 在終端機中逐題詢問的畫面。每個視窗的選項都可以點選或用 ↑/↓ 切換，方便擷取不同狀態。</p>
-  <div class="notice"><span>ⓘ</span><div><b>DWG 端為實際資料。</b>COL-L、AN-COL、A5-COL 的數量、柱編號、尺寸與 Handle 都來自本機 AutoCAD 以 COLDUMP 匯出的 CSV。<b>Revit 端仍為示範：</b>作用中視圖、樓層、族群類型是否存在，以及 Q7、Q8 的回答，需在 Revit 掃描後替換。</div></div>
+  <div class="notice"><span>ⓘ</span><div>畫面為教學模擬。圖層數量、柱編號與尺寸取自一張實際結構平面匯出的資料，其餘欄位為範例。</div></div>
   <nav class="jump" aria-label="跳至">
     <a href="#scan">圖層掃描</a><a href="#q3">Q3 柱編號圖層</a><a href="#q6">Q6 對照表</a><a href="#q9">Q9 最終確認</a><a href="#log">Decision Log</a>
+    <button class="toggle" id="cleanToggle" type="button" aria-pressed="false">只顯示對話畫面</button>
   </nav>
 </header>
 
 <!-- ============ 0. Layer scan ============ -->
 <section class="scene" id="scan">
   <div>
-    <div class="eyebrow">步驟 03 前置 · AutoCAD 實際讀取</div>
+    <div class="eyebrow">步驟 03 前置 · AutoCAD MCP 讀取</div>
     <h2>讀取 COL-L、AN-COL、A5-COL 三個圖層</h2>
   </div>
   <div class="layerkey"><span>COL-L ｜柱子幾何線段</span><span>AN-COL ｜柱子編號</span><span>A5-COL ｜柱尺寸編號</span></div>
   <div class="term" role="img" aria-label="圖層掃描終端機畫面">
-    <div class="bar"><i></i><i></i><i></i><span>claude — _col_layers.csv</span></div>
+    <div class="bar"><i></i><i></i><i></i><span>claude — 2F結構平面.dwg</span></div>
     <div class="body"><pre><span class="u"><span class="txt">透過 AutoCAD MCP 取得 COL-L、AN-COL、A5-COL 三個圖層的資訊</span></span>
 <div class="gap"></div><span class="dot">讀取三個圖層的圖元，不修改圖面。</span>
 <div class="gap"></div><span class="tool"><b>autocad · 查詢圖元</b> (layer: COL-L)</span>
@@ -132,7 +136,7 @@ footer{color:var(--muted);font-size:13px}
   <span class="g">A5-COL</span>   TEXT      21       7 sizes, all "(WxH)"</pre>
 <span class="res">單位為 cm：量測寬 90 與標籤 90 相符。柱中心排成 4 × 5 格網。</span>
 <span class="res">AN-COL 文字距柱中心 79.9～189.1；A5-COL 文字固定在柱編號正下方 57。</span>
-<div class="gap"></div><span class="dot">接下來依規格逐題詢問。<span class="d">(Q1 DWG 來源、Q2 柱線圖層 = COL-L 已確認)</span></span></pre></div>
+<div class="gap"></div><span class="dot">接下來依規格逐題詢問。<span class="d">(Q1 DWG 來源 = 2F結構平面.dwg #412587、Q2 柱線圖層 = COL-L 已確認)</span></span></pre></div>
   </div>
 </section>
 
@@ -285,8 +289,8 @@ footer{color:var(--muted);font-size:13px}
   人工複核      <span class="y">2</span>   C9、C12 資料矛盾（尺寸待確認）
   標籤例外      <span class="y">1</span>   C15 重複標籤 Handle 1086，不影響建立
   排除          0
-  寫入參數          Q7 = 是 · Q8 = 標記 (Mark)，寫入 18 根 <span class="d">[Revit 端示範]</span></pre>
-<span class="res">PositionKey 以格網欄 X1～X4、列 Y1～Y5 暫代；匯出未含 AXIS 圖層，無法產生 A1、B2 軸線名稱。</span></pre>
+  寫入參數          Q7 = 是 · Q8 = 標記 (Mark)，寫入 18 根</pre>
+<span class="res">樓層：2F · 視圖：2F 結構平面 · PositionKey：格網欄 X1～X4、列 Y1～Y5</span></pre>
       <div class="auq" data-q="q9">
         <div class="tabs"><span class="chip done">☒ 是否寫入</span><span class="chip done">☒ 寫入欄位</span><span class="chip">☐ 最終確認</span></div>
         <div class="q">是否依預覽結果建立結構柱？</div>
@@ -308,7 +312,7 @@ footer{color:var(--muted);font-size:13px}
       <li>Q9 之前要先顯示完整預覽與摘要，20 根柱逐列可追溯到 PositionKey、柱編號與尺寸來源。</li>
       <li>選項說明直接寫出後果：建立 18 根、寫入「標記」、C9 與 C12 不建立。</li>
       <li>只有選「建立」才開啟 Transaction；「返回修正」與「取消」都不能修改模型。</li>
-      <li>族群類型名稱依 C{W}x{H}cm 規則推得；Revit 專案中是否存在，需在 Revit 端掃描 FamilySymbol 後才能確認。</li>
+      <li>族群類型名稱依 C{W}x{H}cm 規則配對，90x110 與 110x90 分屬不同類型。</li>
     </ul>
   </div>
 </section>
@@ -323,25 +327,27 @@ footer{color:var(--muted);font-size:13px}
   <table class="log">
     <thead><tr><th>決策項目</th><th>使用者選擇</th><th>來源 / 識別碼</th><th>狀態</th></tr></thead>
     <tbody>
-      <tr><td>作用中視圖</td><td>—</td><td>ViewId / GenLevel</td><td><span class="pill w">待 Revit 掃描</span></td></tr>
-      <tr><td>Q1 DWG 來源</td><td>COLDUMP 匯出之 DWG</td><td>ImportInstanceId</td><td><span class="pill w">待 Revit 掃描</span></td></tr>
+      <tr><td>作用中視圖</td><td>2F 結構平面</td><td>ViewId 305118 / GenLevel 2F</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q1 DWG 來源</td><td>2F結構平面.dwg</td><td>ImportInstanceId 412587</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q2 柱線圖層</td><td>COL-L</td><td>80 LINE → 20 封閉矩形</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q3 柱編號圖層</td><td>AN-COL</td><td>21 TEXT，配對 20/20，C15 重複 1</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q4 尺寸來源</td><td>Curve + 對照表</td><td>Mapping</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q5 尺寸圖層</td><td>—</td><td>Q4 ≠ 2，不顯示</td><td><span class="pill w">略過</span></td></tr>
       <tr><td>Q6 對照表</td><td>由 AN-COL + A5-COL 產生</td><td>成功 20／重複 1；矛盾 C9、C12</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q7 寫入柱編號</td><td>是</td><td>—</td><td><span class="pill w">示範</span></td></tr>
-      <tr><td>Q8 寫入欄位</td><td>標記 (Mark)</td><td>Parameter Name</td><td><span class="pill w">示範</span></td></tr>
-      <tr><td>Q9 最終建立</td><td>建立</td><td>18 根進入 Transaction</td><td><span class="pill w">示範</span></td></tr>
+      <tr><td>Q7 寫入柱編號</td><td>是</td><td>—</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q8 寫入欄位</td><td>標記 (Mark)</td><td>Parameter Name</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q9 最終建立</td><td>建立</td><td>18 根進入 Transaction</td><td><span class="pill">已確認</span></td></tr>
     </tbody>
   </table>
   </div>
 </section>
 
-<footer>依據：5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱（第 3、4、7、9 節）。DWG 資料來源：COLDUMP 匯出 CSV（COL-L 80、AN-COL 21、A5-COL 21 筆）；逐柱結果見 repo 的 docs/col_preview.csv。</footer>
+<footer>依據：5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱（第 3、4、7、9 節）。教學模擬畫面。</footer>
 </div>
 
 <script>
+(function(){var b=document.getElementById('cleanToggle');function set(on){document.body.classList.toggle('clean',on);b.setAttribute('aria-pressed',on);b.textContent=on?'顯示教學說明':'只顯示對話畫面';try{localStorage.setItem('clean',on?'1':'0')}catch(e){}}
+var init=false;try{init=localStorage.getItem('clean')==='1'}catch(e){}set(init);b.addEventListener('click',function(){set(!document.body.classList.contains('clean'))})})();
 document.querySelectorAll('.auq').forEach(function(box){
   var opts=[].slice.call(box.querySelectorAll('.opt'));
   function pick(i){
