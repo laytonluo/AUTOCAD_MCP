@@ -1,0 +1,341 @@
+<title>柱翻模 Q3・Q6・Q9 對話</title>
+<meta name="description" content="5.1.3 透過 MCP 依 DWG 建立結構柱：Ask User Question Q3、Q6、Q9 模擬對話畫面（教學用）">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#EEF1F0; --paper:#FFFFFF; --ink:#18201D; --muted:#5A6762; --line:#D3DAD7;
+  --accent:#2C6E5A; --accent-soft:#DDEBE5; --warn:#9A5B00; --warn-soft:#FBEBD2;
+  /* terminal: fixed dark in both themes, like a real terminal */
+  --t-bg:#15181B; --t-bar:#1F2327; --t-fg:#D9DEE1; --t-dim:#7E888F; --t-rule:#2E343A;
+  --t-claude:#D97757; --t-blue:#79A8E8; --t-green:#8CC58F; --t-yellow:#E3C06A; --t-red:#E88383; --t-sel:#262B30;
+  --mono:"JetBrains Mono","Noto Sans TC",ui-monospace,Menlo,Consolas,monospace;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#101413; --paper:#171D1B; --ink:#E4EAE7; --muted:#96A39E; --line:#2B3431;
+    --accent:#7CC3AB; --accent-soft:#1D3029; --warn:#F0B660; --warn-soft:#33270F;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101413; --paper:#171D1B; --ink:#E4EAE7; --muted:#96A39E; --line:#2B3431;
+  --accent:#7CC3AB; --accent-soft:#1D3029; --warn:#F0B660; --warn-soft:#33270F;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header h1{font-size:clamp(22px,4vw,30px);line-height:1.3;margin:0 0 8px;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:68ch}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.notice{display:flex;gap:10px;background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:8px;padding:12px 14px;font-size:14px;margin-top:16px}
+.notice b{color:var(--warn)}
+nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+nav.jump a{font-family:var(--mono);font-size:13px;text-decoration:none;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+nav.jump a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+section.scene{display:flex;flex-direction:column;gap:14px}
+.scene h2{font-size:20px;margin:0;text-wrap:balance}
+.scene .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 20px;font-size:13.5px;color:var(--muted);margin:0}
+.scene .meta div b{display:block;color:var(--ink);font-weight:500}
+.layerkey{display:flex;flex-wrap:wrap;gap:8px}
+.layerkey span{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:2px 8px}
+
+/* terminal window */
+.term{background:var(--t-bg);color:var(--t-fg);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.18);font-family:var(--mono);font-size:13.5px;line-height:1.6}
+.term .bar{background:var(--t-bar);display:flex;align-items:center;gap:8px;padding:8px 12px;color:var(--t-dim);font-size:12px}
+.term .bar i{width:11px;height:11px;border-radius:50%;background:#444B52;display:inline-block}
+.term .bar i:nth-child(1){background:#E0605A}.term .bar i:nth-child(2){background:#E2B34A}.term .bar i:nth-child(3){background:#5DBB63}
+.term .bar span{margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term .body{padding:16px 18px 18px;overflow-x:auto}
+.term pre{margin:0;font:inherit;white-space:pre}
+.u{color:var(--t-dim)} .u::before{content:"> ";color:var(--t-dim)}
+.u .txt{color:var(--t-fg)}
+.dot{color:var(--t-fg)} .dot::before{content:"● ";color:var(--t-fg)}
+.tool::before{content:"● ";color:var(--t-green)}
+.tool b{color:var(--t-fg)}
+.res{color:var(--t-dim);padding-left:2ch}
+.res::before{content:"⎿  "}
+.g{color:var(--t-green)} .y{color:var(--t-yellow)} .r{color:var(--t-red)} .b{color:var(--t-blue)} .c{color:var(--t-claude)} .d{color:var(--t-dim)}
+.gap{height:12px}
+.hr{border-top:1px solid var(--t-rule);margin:14px 0}
+
+/* Ask User Question widget */
+.auq{border-top:1px solid var(--t-rule);padding-top:12px;margin-top:6px}
+.auq .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.auq .chip{background:#2A3E5A;color:#CFE0F7;padding:0 8px;border-radius:3px}
+.auq .chip.done{background:#23392A;color:#BDE3C0}
+.auq .q{font-weight:700;margin:4px 0 10px;white-space:normal}
+.opt{display:grid;grid-template-columns:3ch 1fr;padding:2px 6px;border-radius:4px;cursor:pointer;margin:0 -6px}
+.opt .ptr{color:transparent}
+.opt.sel{background:var(--t-sel)}
+.opt.sel .ptr{color:var(--t-claude)}
+.opt.sel .lbl{color:var(--t-claude)}
+.opt .lbl{white-space:pre-wrap}
+.opt .desc{grid-column:2;color:var(--t-dim);white-space:pre-wrap;font-size:12.5px}
+.opt:focus-visible{outline:1px solid var(--t-claude)}
+.typed{grid-column:2;margin-top:4px;border-left:2px solid var(--t-claude);padding-left:10px;color:var(--t-fg);white-space:pre}
+.hint{color:var(--t-dim);font-size:12px;margin-top:10px}
+.answer{margin-top:10px}
+
+.notes{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:14px}
+.notes h3{font-size:14px;margin:0 0 6px;color:var(--accent)}
+.notes ul{margin:0;padding-left:1.2em}
+.notes li+li{margin-top:4px}
+.notes code{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);padding:0 4px;border-radius:3px}
+
+table.log{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--paper)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table.log th,table.log td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.log th{font-weight:500;color:var(--muted);font-size:12.5px;letter-spacing:.03em}
+table.log tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:12px;padding:0 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.pill.w{background:var(--warn-soft);color:var(--warn)}
+footer{color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">5.1.3 · Ask User Question 教學畫面</div>
+  <h1>透過 AutoCAD MCP 讀取柱圖層：Q3、Q6、Q9 執行對話</h1>
+  <p>依《5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱》第 4 節 Ask User Question 規格，模擬 Claude Code 在終端機中逐題詢問的畫面。每個視窗的選項都可以點選或用 ↑/↓ 切換，方便擷取不同狀態。</p>
+  <div class="notice"><span>⚠</span><div><b>示範資料。</b>本頁的 DWG 名稱、ElementId、圖元數量與文字內容都是為教學編寫的範例，並非實際 DWG 掃描結果。圖層名稱採用本次指定的 <code>COL-L</code>、<code>AN-COL</code>、<code>A5-COL</code>。實際操作時，選項必須來自 MCP 的真實掃描。</div></div>
+  <nav class="jump" aria-label="跳至">
+    <a href="#scan">圖層掃描</a><a href="#q3">Q3 柱編號圖層</a><a href="#q6">Q6 對照表</a><a href="#q9">Q9 最終確認</a><a href="#log">Decision Log</a>
+  </nav>
+</header>
+
+<!-- ============ 0. Layer scan ============ -->
+<section class="scene" id="scan">
+  <div>
+    <div class="eyebrow">步驟 03 前置 · AutoCAD MCP 讀取</div>
+    <h2>讀取 COL-L、AN-COL、A5-COL 三個圖層</h2>
+  </div>
+  <div class="layerkey"><span>COL-L ｜柱子幾何線段</span><span>AN-COL ｜柱子編號</span><span>A5-COL ｜柱尺寸編號</span></div>
+  <div class="term" role="img" aria-label="MCP 圖層掃描終端機畫面">
+    <div class="bar"><i></i><i></i><i></i><span>claude — S-2F結構平面.dwg</span></div>
+    <div class="body"><pre><span class="u"><span class="txt">透過 AutoCAD MCP 取得 COL-L、AN-COL、A5-COL 三個圖層的資訊</span></span>
+<div class="gap"></div><span class="dot">先列出圖面中的圖層，再逐一讀取三個指定圖層的圖元。不會修改圖面。</span>
+<div class="gap"></div><span class="tool"><b>autocad-mcp · 列出圖層</b> (drawing: S-2F結構平面.dwg)</span>
+<span class="res">共 11 個圖層：0, AXIS, AXIS-TXT, <span class="g">COL-L</span>, <span class="g">AN-COL</span>, <span class="g">A5-COL</span>, BEAM, BEAM-TXT, WALL, DIM, TEXT</span>
+<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: COL-L)</span>
+<span class="res">LWPOLYLINE 17（封閉 16、未封閉 1）· LINE 4 · CIRCLE 1</span>
+<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: AN-COL)</span>
+<span class="res">TEXT 17 · 內容：C1 ×8、C2 ×4、C3 ×3、C4 ×1、C5 ×1</span>
+<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: A5-COL)</span>
+<span class="res">TEXT 17 · 內容：60x80 ×8、80x60 ×4、70x70 ×3、R70 ×1、50x50 ×1</span>
+<div class="gap"></div><span class="dot">圖層分析結果：</span>
+<pre>  圖層      用途            圖元                         可形成柱
+  <span class="g">COL-L</span>     柱子幾何線段    17 PL + 4 LINE + 1 CIRCLE    19 輪廓（有效 18，<span class="r">未封閉 1</span>）
+  <span class="g">AN-COL</span>    柱子編號        17 TEXT                      可配對 17 根，<span class="y">1 根無編號</span>
+  <span class="g">A5-COL</span>    柱尺寸編號      17 TEXT                      5 種尺寸（含圓柱 R70）
+
+  4 條 LINE 在 B2 位置組成 1 個矩形；未封閉輪廓位於 D5 附近，列入排除。</pre>
+<div class="gap"></div><span class="dot">接下來依規格逐題詢問。<span class="d">(Q1 DWG 來源、Q2 柱線圖層已選：S-2F結構平面.dwg #412587、COL-L)</span></span></pre></div>
+  </div>
+</section>
+
+<!-- ============ Q3 ============ -->
+<section class="scene" id="q3">
+  <div>
+    <div class="eyebrow">Q3 · 選填</div>
+    <h2>柱編號圖層</h2>
+  </div>
+  <dl class="meta">
+    <div>詢問文字<b>請選擇柱編號或柱名稱圖層</b></div>
+    <div>選項來源<b>實際掃描圖層，可不使用</b></div>
+    <div>推薦規則<b>COL_NAME / COLMN_N / 內容像柱號</b></div>
+  </dl>
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q3</span></div>
+    <div class="body"><pre><span class="dot">柱線圖層 COL-L 已確認（有效輪廓 18）。下一題：柱編號。</span>
+<span class="res">AN-COL 的 17 筆文字都符合「英文字母+數字」柱號格式，與輪廓質心的最近距離都在 45 cm 內，所以列為推薦。</span></pre>
+      <div class="auq" data-q="q3">
+        <div class="tabs"><span class="chip done">☒ DWG 來源</span><span class="chip done">☒ 柱線圖層</span><span class="chip">☐ 柱編號圖層</span></div>
+        <div class="q">請選擇柱編號或柱名稱圖層</div>
+        <div class="opts">
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. AN-COL (Recommended)</span><span class="desc">TEXT 17 筆（C1、C2、C3、C4、C5），可配對 17/18 根柱</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. A5-COL</span><span class="desc">TEXT 17 筆，內容為尺寸（60x80、80x60…），較適合作為尺寸來源</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. AXIS-TXT</span><span class="desc">軸線名稱 A~D、1~5，只能產生 PositionKey，不建議當柱編號</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">4. 不使用柱編號</span><span class="desc">只以幾何建柱，之後無法寫入柱編號，也無法使用對照表</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">5. Type something.</span><span class="desc">手動輸入圖層名稱</span></div>
+        </div>
+        <div class="hint">Enter to select · ↑/↓ to navigate · Esc to cancel</div>
+      </div>
+      <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">柱編號圖層 → AN-COL</span></span>
+<div class="gap"></div><span class="dot">已記錄 Q3 = AN-COL。柱編號配對：17 根成功，<span class="y">1 根無編號（D4）</span>，標籤無重複分配。</span></pre>
+    </div>
+  </div>
+  <div class="notes">
+    <h3>教學重點</h3>
+    <ul>
+      <li>選項全部來自實際掃描到的圖層；圖面沒有 <code>COL_NAME</code>，所以不會出現這個選項。</li>
+      <li>推薦 AN-COL 是因為它的文字內容像柱號，並附上可配對數量作為理由。</li>
+      <li>Q3 是選填，所以一定要提供「不使用柱編號」，並說明後果。</li>
+      <li>A5-COL 雖然也放在柱旁，但內容是尺寸，保留給後續尺寸來源使用。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Q6 ============ -->
+<section class="scene" id="q6">
+  <div>
+    <div class="eyebrow">Q6 · 僅 Q4 = 3 時顯示</div>
+    <h2>柱編號與尺寸對照表</h2>
+  </div>
+  <dl class="meta">
+    <div>前一題<b>Q4 尺寸來源 = 3. Curve + 對照表</b></div>
+    <div>詢問文字<b>請貼上柱編號與尺寸對照資料</b></div>
+    <div>格式<b>每列：柱編號,尺寸</b></div>
+  </dl>
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q6</span></div>
+    <div class="body"><pre><span class="dot">Q4 已選「Curve + 柱編號尺寸對照表」。請提供對照資料。</span>
+<span class="res">也可以先用 AN-COL + A5-COL 的就近配對產生草稿，您再修改後貼回。</span></pre>
+      <div class="auq" data-q="q6">
+        <div class="tabs"><span class="chip done">☒ 柱編號圖層</span><span class="chip done">☒ 尺寸來源</span><span class="chip">☐ 對照表</span></div>
+        <div class="q">請貼上柱編號與尺寸對照資料（每列：柱編號,尺寸）</div>
+        <div class="opts">
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 由 AN-COL + A5-COL 產生草稿</span><span class="desc">依柱質心就近配對兩圖層文字，先列出草稿讓您確認</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回 Q4 改選尺寸來源</span><span class="desc">改用 Curve 或 Curve + 尺寸標籤</span></div>
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. Type something.</span><span class="desc">直接貼上對照資料</span>
+<span class="typed">C1,60x80
+C2,80x60
+C3,70x70
+C4,R70
+C5,50x50
+C2,80x60
+C6,
+C7,6Ox80</span></div>
+        </div>
+        <div class="hint">Enter to submit · ↑/↓ to navigate · Esc to cancel</div>
+      </div>
+      <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">（已貼上 8 列對照資料）</span></span>
+<div class="gap"></div><span class="dot">對照表解析結果（尚未套用到柱）：</span>
+<pre>  列  柱編號  原始尺寸  正規化        狀態
+  1   C1      60x80     W60 H80 cm    <span class="g">成功</span>
+  2   C2      80x60     W80 H60 cm    <span class="g">成功</span>
+  3   C3      70x70     W70 H70 cm    <span class="g">成功</span>
+  4   C4      R70       D70 cm (圓)   <span class="g">成功</span>
+  5   C5      50x50     W50 H50 cm    <span class="g">成功</span>
+  6   C2      80x60     —             <span class="y">重複</span>  與第 2 列相同，只採用一次
+  7   C6      (空白)    —             <span class="r">缺值</span>  沒有尺寸
+  8   C7      6Ox80     —             <span class="r">無法識別</span>  「6O」含英文字母 O</pre>
+<span class="dot">摘要：<span class="g">成功 5</span> · <span class="y">重複 1</span> · <span class="r">缺值 1</span> · <span class="r">無法識別 1</span></span>
+<span class="res">C6、C7 不在 AN-COL 中，不影響本次建柱。</span>
+<span class="res">與 A5-COL 交叉比對：17 筆一致。與 COL-L 幾何比對：<span class="y">B3 (C3) 量測 70x75，與表中 70x70 矛盾</span>。</span></pre>
+    </div>
+  </div>
+  <div class="notes">
+    <h3>教學重點</h3>
+    <ul>
+      <li>Q6 需要自由輸入，所以用 Ask User Question 內建的「Type something.」欄位貼上多列資料。</li>
+      <li>先解析、再套用。成功、重複、缺值、無法識別四類要分開列出，不能默默略過。</li>
+      <li>對照表尺寸還要與 COL-L 幾何交叉比對；不一致的柱標為「資料矛盾」，不進入交易。</li>
+      <li>80x60 與 60x80 分別正規化為 W80 H60 與 W60 H80，不自動互換。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Q9 ============ -->
+<section class="scene" id="q9">
+  <div>
+    <div class="eyebrow">Q9 · 建立前停止點</div>
+    <h2>最終確認</h2>
+  </div>
+  <dl class="meta">
+    <div>詢問文字<b>是否依預覽結果建立結構柱</b></div>
+    <div>選項<b>建立／返回修正／取消</b></div>
+    <div>規則<b>只有「建立」可進 Transaction</b></div>
+  </dl>
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q9</span></div>
+    <div class="body"><pre><span class="dot">建立前預覽（樓層：2F · 視圖：2F 結構平面 · 尚未修改 Revit 模型）</span>
+<pre>  建立  位置  柱編號  幾何  圖面尺寸  帶入尺寸  族群類型     狀態
+  <span class="g">✔</span>     A1    C1      矩形  60x80     60x80     C60x80cm     <span class="g">已配對</span>
+  <span class="g">✔</span>     A2    C2      矩形  80x60     80x60     C80x60cm     <span class="g">已配對</span>
+  <span class="g">✔</span>     C3    C4      圓形  D70       R70       C-R70cm      <span class="g">已配對</span>
+  <span class="d">…其餘 12 根已配對</span>
+  <span class="r">✘</span>     B3    C3      矩形  70x75     70x70     C70x70cm     <span class="y">資料矛盾</span>
+  <span class="r">✘</span>     C5    C5      矩形  50x50     50x50     —            <span class="y">無類型</span>
+  <span class="r">✘</span>     D4    —       矩形  60x80     —           —            <span class="y">無編號</span>
+  <span class="r">✘</span>     D5    —       —     —         —           —            <span class="r">排除</span>  輪廓未封閉</pre>
+<span class="dot">最終摘要</span>
+<pre>  準備建立     <span class="g">15</span>   C60x80cm ×8 · C80x60cm ×4 · C70x70cm ×2 · C-R70cm ×1
+  人工複核      <span class="y">2</span>   B3 資料矛盾、D4 無編號
+  無類型略過    <span class="y">1</span>   C5：專案內沒有 C50x50cm
+  排除          <span class="r">1</span>   D5：輪廓未封閉
+  寫入參數          Q7 = 是 · Q8 = 標記 (Mark)，寫入 15 根</pre></pre>
+      <div class="auq" data-q="q9">
+        <div class="tabs"><span class="chip done">☒ 是否寫入</span><span class="chip done">☒ 寫入欄位</span><span class="chip">☐ 最終確認</span></div>
+        <div class="q">是否依預覽結果建立結構柱？</div>
+        <div class="opts">
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 建立</span><span class="desc">開啟 Transaction，建立 15 根結構柱並寫入「標記」；其餘 4 根不建立</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回修正</span><span class="desc">回到資料對照，處理 B3 矛盾、D4 無編號或補建 C50x50cm 類型</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. 取消</span><span class="desc">結束流程，不修改模型，保留分析結果與 Decision Log</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">4. Type something.</span><span class="desc">輸入其他指示</span></div>
+        </div>
+        <div class="hint">Enter to select · ↑/↓ to navigate · Esc to cancel</div>
+      </div>
+      <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">最終確認 → 建立</span></span>
+<div class="gap"></div><span class="dot">已取得「建立」確認，開啟 Transaction「DWG 建立結構柱」…</span></pre>
+    </div>
+  </div>
+  <div class="notes">
+    <h3>教學重點</h3>
+    <ul>
+      <li>Q9 之前一定要先顯示預覽與摘要，使用者看得到會建立什麼、不會建立什麼。</li>
+      <li>選項說明直接寫出後果（建立幾根、寫入哪個欄位），避免使用者猜測。</li>
+      <li>只有選「建立」才開啟 Transaction；「返回修正」與「取消」都不能修改模型。</li>
+      <li>資料矛盾、無類型、無編號、排除的柱不會被計入成功。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Decision Log ============ -->
+<section class="scene" id="log">
+  <div>
+    <div class="eyebrow">第 9 節範本</div>
+    <h2>本次模擬的 Decision Log</h2>
+  </div>
+  <div class="tablewrap">
+  <table class="log">
+    <thead><tr><th>決策項目</th><th>使用者選擇</th><th>來源 / 識別碼</th><th>狀態</th></tr></thead>
+    <tbody>
+      <tr><td>作用中視圖</td><td>2F 結構平面</td><td>ViewId 305118 / GenLevel 2F</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q1 DWG 來源</td><td>S-2F結構平面.dwg</td><td>ImportInstanceId 412587</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q2 柱線圖層</td><td>COL-L</td><td>Layer Name</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q3 柱編號圖層</td><td>AN-COL</td><td>Layer Name</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q4 尺寸來源</td><td>Curve + 對照表</td><td>Mapping</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q5 尺寸圖層</td><td>—</td><td>Q4 ≠ 2，不顯示</td><td><span class="pill w">略過</span></td></tr>
+      <tr><td>Q6 對照表</td><td>貼上 8 列</td><td>成功 5／重複 1／缺值 1／無法識別 1；A5-COL 交叉比對</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q7 寫入柱編號</td><td>是</td><td>—</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q8 寫入欄位</td><td>標記 (Mark)</td><td>Parameter Name</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q9 最終建立</td><td>建立</td><td>15 根進入 Transaction</td><td><span class="pill">已確認</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>依據：5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱（第 3、4、7、9 節）。所有數值為教學範例。</footer>
+</div>
+
+<script>
+document.querySelectorAll('.auq').forEach(function(box){
+  var opts=[].slice.call(box.querySelectorAll('.opt'));
+  function pick(i){
+    opts.forEach(function(o,j){o.classList.toggle('sel',j===i)});
+    opts[i].focus({preventScroll:true});
+  }
+  opts.forEach(function(o,i){
+    o.addEventListener('click',function(){pick(i)});
+    o.addEventListener('keydown',function(e){
+      if(e.key==='ArrowDown'){e.preventDefault();pick((i+1)%opts.length)}
+      if(e.key==='ArrowUp'){e.preventDefault();pick((i-1+opts.length)%opts.length)}
+    });
+  });
+});
+</script>
