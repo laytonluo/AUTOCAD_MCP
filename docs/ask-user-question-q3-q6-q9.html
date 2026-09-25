@@ -102,7 +102,7 @@ footer{color:var(--muted);font-size:13px}
   <div class="eyebrow">5.1.3 · Ask User Question 教學畫面</div>
   <h1>透過 AutoCAD MCP 讀取柱圖層：Q3、Q6、Q9 執行對話</h1>
   <p>依《5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱》第 4 節 Ask User Question 規格，模擬 Claude Code 在終端機中逐題詢問的畫面。每個視窗的選項都可以點選或用 ↑/↓ 切換，方便擷取不同狀態。</p>
-  <div class="notice"><span>⚠</span><div><b>示範資料。</b>本頁的 DWG 名稱、ElementId、圖元數量與文字內容都是為教學編寫的範例，並非實際 DWG 掃描結果。圖層名稱採用本次指定的 <code>COL-L</code>、<code>AN-COL</code>、<code>A5-COL</code>。實際操作時，選項必須來自 MCP 的真實掃描。</div></div>
+  <div class="notice"><span>ⓘ</span><div><b>DWG 端為實際資料。</b>COL-L、AN-COL、A5-COL 的數量、柱編號、尺寸與 Handle 都來自本機 AutoCAD 以 COLDUMP 匯出的 CSV。<b>Revit 端仍為示範：</b>作用中視圖、樓層、族群類型是否存在，以及 Q7、Q8 的回答，需在 Revit 掃描後替換。</div></div>
   <nav class="jump" aria-label="跳至">
     <a href="#scan">圖層掃描</a><a href="#q3">Q3 柱編號圖層</a><a href="#q6">Q6 對照表</a><a href="#q9">Q9 最終確認</a><a href="#log">Decision Log</a>
   </nav>
@@ -111,30 +111,28 @@ footer{color:var(--muted);font-size:13px}
 <!-- ============ 0. Layer scan ============ -->
 <section class="scene" id="scan">
   <div>
-    <div class="eyebrow">步驟 03 前置 · AutoCAD MCP 讀取</div>
+    <div class="eyebrow">步驟 03 前置 · AutoCAD 實際讀取</div>
     <h2>讀取 COL-L、AN-COL、A5-COL 三個圖層</h2>
   </div>
   <div class="layerkey"><span>COL-L ｜柱子幾何線段</span><span>AN-COL ｜柱子編號</span><span>A5-COL ｜柱尺寸編號</span></div>
-  <div class="term" role="img" aria-label="MCP 圖層掃描終端機畫面">
-    <div class="bar"><i></i><i></i><i></i><span>claude — S-2F結構平面.dwg</span></div>
+  <div class="term" role="img" aria-label="圖層掃描終端機畫面">
+    <div class="bar"><i></i><i></i><i></i><span>claude — _col_layers.csv</span></div>
     <div class="body"><pre><span class="u"><span class="txt">透過 AutoCAD MCP 取得 COL-L、AN-COL、A5-COL 三個圖層的資訊</span></span>
-<div class="gap"></div><span class="dot">先列出圖面中的圖層，再逐一讀取三個指定圖層的圖元。不會修改圖面。</span>
-<div class="gap"></div><span class="tool"><b>autocad-mcp · 列出圖層</b> (drawing: S-2F結構平面.dwg)</span>
-<span class="res">共 11 個圖層：0, AXIS, AXIS-TXT, <span class="g">COL-L</span>, <span class="g">AN-COL</span>, <span class="g">A5-COL</span>, BEAM, BEAM-TXT, WALL, DIM, TEXT</span>
-<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: COL-L)</span>
-<span class="res">LWPOLYLINE 17（封閉 16、未封閉 1）· LINE 4 · CIRCLE 1</span>
-<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: AN-COL)</span>
-<span class="res">TEXT 17 · 內容：C1 ×8、C2 ×4、C3 ×3、C4 ×1、C5 ×1</span>
-<div class="gap"></div><span class="tool"><b>autocad-mcp · 查詢圖元</b> (layer: A5-COL)</span>
-<span class="res">TEXT 17 · 內容：60x80 ×8、80x60 ×4、70x70 ×3、R70 ×1、50x50 ×1</span>
+<div class="gap"></div><span class="dot">讀取三個圖層的圖元，不修改圖面。</span>
+<div class="gap"></div><span class="tool"><b>autocad · 查詢圖元</b> (layer: COL-L)</span>
+<span class="res">LINE 80 · 端點容差 0.1 串接 → <span class="g">20 個封閉矩形</span>，每個 4 條 LINE；無未封閉、無異形</span>
+<div class="gap"></div><span class="tool"><b>autocad · 查詢圖元</b> (layer: AN-COL)</span>
+<span class="res">TEXT 21 · C1～C20，其中 <span class="y">C15 出現 2 次</span>（Handle 126F、1086）</span>
+<div class="gap"></div><span class="tool"><b>autocad · 查詢圖元</b> (layer: A5-COL)</span>
+<span class="res">TEXT 21 · (90x110)×7、(110x90)×4、(100x100)×3、(90x105)×2、(90x120)×2、(100x90)×2、(90x115)×1</span>
 <div class="gap"></div><span class="dot">圖層分析結果：</span>
-<pre>  圖層      用途            圖元                         可形成柱
-  <span class="g">COL-L</span>     柱子幾何線段    17 PL + 4 LINE + 1 CIRCLE    19 輪廓（有效 18，<span class="r">未封閉 1</span>）
-  <span class="g">AN-COL</span>    柱子編號        17 TEXT                      可配對 17 根，<span class="y">1 根無編號</span>
-  <span class="g">A5-COL</span>    柱尺寸編號      17 TEXT                      5 種尺寸（含圓柱 R70）
-
-  4 條 LINE 在 B2 位置組成 1 個矩形；未封閉輪廓位於 D5 附近，列入排除。</pre>
-<div class="gap"></div><span class="dot">接下來依規格逐題詢問。<span class="d">(Q1 DWG 來源、Q2 柱線圖層已選：S-2F結構平面.dwg #412587、COL-L)</span></span></pre></div>
+<pre>  layer    type      count    result
+  <span class="g">COL-L</span>    LINE      80       20 closed rectangles
+  <span class="g">AN-COL</span>   TEXT      21       C1~C20, <span class="y">C15 x2</span>
+  <span class="g">A5-COL</span>   TEXT      21       7 sizes, all "(WxH)"</pre>
+<span class="res">單位為 cm：量測寬 90 與標籤 90 相符。柱中心排成 4 × 5 格網。</span>
+<span class="res">AN-COL 文字距柱中心 79.9～189.1；A5-COL 文字固定在柱編號正下方 57。</span>
+<div class="gap"></div><span class="dot">接下來依規格逐題詢問。<span class="d">(Q1 DWG 來源、Q2 柱線圖層 = COL-L 已確認)</span></span></pre></div>
   </div>
 </section>
 
@@ -147,35 +145,35 @@ footer{color:var(--muted);font-size:13px}
   <dl class="meta">
     <div>詢問文字<b>請選擇柱編號或柱名稱圖層</b></div>
     <div>選項來源<b>實際掃描圖層，可不使用</b></div>
-    <div>推薦規則<b>COL_NAME / COLMN_N / 內容像柱號</b></div>
+    <div>推薦理由<b>文字格式像柱號、可配對數最多</b></div>
   </dl>
   <div class="term">
     <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q3</span></div>
-    <div class="body"><pre><span class="dot">柱線圖層 COL-L 已確認（有效輪廓 18）。下一題：柱編號。</span>
-<span class="res">AN-COL 的 17 筆文字都符合「英文字母+數字」柱號格式，與輪廓質心的最近距離都在 45 cm 內，所以列為推薦。</span></pre>
+    <div class="body"><pre><span class="dot">柱線圖層 COL-L 已確認（20 個封閉矩形）。下一題：柱編號。</span>
+<span class="res">AN-COL 的 21 筆文字都是「C + 數字」柱號格式，20 根柱都能找到 250 以內的柱號，所以列為推薦。</span></pre>
       <div class="auq" data-q="q3">
         <div class="tabs"><span class="chip done">☒ DWG 來源</span><span class="chip done">☒ 柱線圖層</span><span class="chip">☐ 柱編號圖層</span></div>
         <div class="q">請選擇柱編號或柱名稱圖層</div>
         <div class="opts">
-          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. AN-COL (Recommended)</span><span class="desc">TEXT 17 筆（C1、C2、C3、C4、C5），可配對 17/18 根柱</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. A5-COL</span><span class="desc">TEXT 17 筆，內容為尺寸（60x80、80x60…），較適合作為尺寸來源</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. AXIS-TXT</span><span class="desc">軸線名稱 A~D、1~5，只能產生 PositionKey，不建議當柱編號</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">4. 不使用柱編號</span><span class="desc">只以幾何建柱，之後無法寫入柱編號，也無法使用對照表</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">5. Type something.</span><span class="desc">手動輸入圖層名稱</span></div>
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. AN-COL (Recommended)</span><span class="desc">TEXT 21 筆（C1～C20），可配對 20/20 根柱；C15 多出 1 筆</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. A5-COL</span><span class="desc">TEXT 21 筆，內容為 (90x110) 類尺寸，較適合作為尺寸來源</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. 不使用柱編號</span><span class="desc">只以幾何建柱，之後無法寫入柱編號，也無法使用對照表</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">4. Type something.</span><span class="desc">手動輸入圖層名稱</span></div>
         </div>
         <div class="hint">Enter to select · ↑/↓ to navigate · Esc to cancel</div>
       </div>
       <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">柱編號圖層 → AN-COL</span></span>
-<div class="gap"></div><span class="dot">已記錄 Q3 = AN-COL。柱編號配對：17 根成功，<span class="y">1 根無編號（D4）</span>，標籤無重複分配。</span></pre>
+<div class="gap"></div><span class="dot">已記錄 Q3 = AN-COL。柱編號配對：<span class="g">20/20 根成功</span>，距離 79.9～189.1，無標籤重複分配。</span>
+<span class="res"><span class="y">多出的 C15（Handle 1086）未被使用</span>，位於 X3-Y2 柱上方，列入人工複核。</span></pre>
     </div>
   </div>
   <div class="notes">
     <h3>教學重點</h3>
     <ul>
-      <li>選項全部來自實際掃描到的圖層；圖面沒有 <code>COL_NAME</code>，所以不會出現這個選項。</li>
-      <li>推薦 AN-COL 是因為它的文字內容像柱號，並附上可配對數量作為理由。</li>
-      <li>Q3 是選填，所以一定要提供「不使用柱編號」，並說明後果。</li>
-      <li>A5-COL 雖然也放在柱旁，但內容是尺寸，保留給後續尺寸來源使用。</li>
+      <li>這次匯出只包含三個圖層，所以選項只列 AN-COL、A5-COL；不存在的 <code>COL_NAME</code> 不會出現。</li>
+      <li>推薦 AN-COL 的理由直接寫在選項說明：格式像柱號、20/20 可配對。</li>
+      <li>Q3 是選填，一定要提供「不使用柱編號」，並說明後果。</li>
+      <li>重複的 C15 不會被分配兩次；多出的一筆列為例外，不默默丟棄。</li>
     </ul>
   </div>
 </section>
@@ -194,48 +192,54 @@ footer{color:var(--muted);font-size:13px}
   <div class="term">
     <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q6</span></div>
     <div class="body"><pre><span class="dot">Q4 已選「Curve + 柱編號尺寸對照表」。請提供對照資料。</span>
-<span class="res">也可以先用 AN-COL + A5-COL 的就近配對產生草稿，您再修改後貼回。</span></pre>
+<span class="res">A5-COL 的尺寸文字都放在柱編號正下方 57，可以直接組成對照表草稿。</span></pre>
       <div class="auq" data-q="q6">
         <div class="tabs"><span class="chip done">☒ 柱編號圖層</span><span class="chip done">☒ 尺寸來源</span><span class="chip">☐ 對照表</span></div>
         <div class="q">請貼上柱編號與尺寸對照資料（每列：柱編號,尺寸）</div>
         <div class="opts">
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 由 AN-COL + A5-COL 產生草稿</span><span class="desc">依柱質心就近配對兩圖層文字，先列出草稿讓您確認</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回 Q4 改選尺寸來源</span><span class="desc">改用 Curve 或 Curve + 尺寸標籤</span></div>
-          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. Type something.</span><span class="desc">直接貼上對照資料</span>
-<span class="typed">C1,60x80
-C2,80x60
-C3,70x70
-C4,R70
-C5,50x50
-C2,80x60
-C6,
-C7,6Ox80</span></div>
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 由 AN-COL + A5-COL 產生 (Recommended)</span><span class="desc">21 筆尺寸文字各自對到正上方的柱編號，產生對照表後先解析檢查</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回 Q4 改選尺寸來源</span><span class="desc">改用 Curve 或 Curve + 尺寸標籤（A5-COL）</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. Type something.</span><span class="desc">直接貼上對照資料，例如：C1,110x90</span></div>
         </div>
-        <div class="hint">Enter to submit · ↑/↓ to navigate · Esc to cancel</div>
+        <div class="hint">Enter to select · ↑/↓ to navigate · Esc to cancel</div>
       </div>
-      <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">（已貼上 8 列對照資料）</span></span>
+      <pre class="answer"><div class="hr"></div><span class="u"><span class="txt">對照表 → 由 AN-COL + A5-COL 產生</span></span>
 <div class="gap"></div><span class="dot">對照表解析結果（尚未套用到柱）：</span>
-<pre>  列  柱編號  原始尺寸  正規化        狀態
-  1   C1      60x80     W60 H80 cm    <span class="g">成功</span>
-  2   C2      80x60     W80 H60 cm    <span class="g">成功</span>
-  3   C3      70x70     W70 H70 cm    <span class="g">成功</span>
-  4   C4      R70       D70 cm (圓)   <span class="g">成功</span>
-  5   C5      50x50     W50 H50 cm    <span class="g">成功</span>
-  6   C2      80x60     —             <span class="y">重複</span>  與第 2 列相同，只採用一次
-  7   C6      (空白)    —             <span class="r">缺值</span>  沒有尺寸
-  8   C7      6Ox80     —             <span class="r">無法識別</span>  「6O」含英文字母 O</pre>
-<span class="dot">摘要：<span class="g">成功 5</span> · <span class="y">重複 1</span> · <span class="r">缺值 1</span> · <span class="r">無法識別 1</span></span>
-<span class="res">C6、C7 不在 AN-COL 中，不影響本次建柱。</span>
-<span class="res">與 A5-COL 交叉比對：17 筆一致。與 COL-L 幾何比對：<span class="y">B3 (C3) 量測 70x75，與表中 70x70 矛盾</span>。</span></pre>
+<pre>  id    size        W x H (cm)   status
+  C1    (110x90)    110 x 90     <span class="g">ok</span>
+  C2    (90x110)     90 x 110    <span class="g">ok</span>
+  C3    (90x110)     90 x 110    <span class="g">ok</span>
+  C4    (90x110)     90 x 110    <span class="g">ok</span>
+  C5    (90x105)     90 x 105    <span class="g">ok</span>
+  C6    (90x110)     90 x 110    <span class="g">ok</span>
+  C7    (110x90)    110 x 90     <span class="g">ok</span>
+  C8    (90x105)     90 x 105    <span class="g">ok</span>
+  C9    (100x90)    100 x 90     <span class="g">ok</span>
+  C10   (110x90)    110 x 90     <span class="g">ok</span>
+  C11   (110x90)    110 x 90     <span class="g">ok</span>
+  C12   (100x90)    100 x 90     <span class="g">ok</span>
+  C13   (90x110)     90 x 110    <span class="g">ok</span>
+  C14   (90x110)     90 x 110    <span class="g">ok</span>
+  C15   (100x100)   100 x 100    <span class="g">ok</span>
+  C15   (100x100)   -            <span class="y">duplicate</span>  same value, used once
+  C16   (90x110)     90 x 110    <span class="g">ok</span>
+  C17   (100x100)   100 x 100    <span class="g">ok</span>
+  C18   (90x120)     90 x 120    <span class="g">ok</span>
+  C19   (90x120)     90 x 120    <span class="g">ok</span>
+  C20   (90x115)     90 x 115    <span class="g">ok</span></pre>
+<span class="dot">摘要：<span class="g">成功 20</span> · <span class="y">重複 1</span> · 缺值 0 · 無法識別 0</span>
+<span class="res">與 COL-L 幾何比對：18 根一致，<span class="r">2 根資料矛盾</span></span>
+<span class="res">  C9  (X1-Y3) 表 100x90 ／ 量測 90x90</span>
+<span class="res">  C12 (X4-Y3) 表 100x90 ／ 量測 110x90</span></pre>
     </div>
   </div>
   <div class="notes">
     <h3>教學重點</h3>
     <ul>
-      <li>Q6 需要自由輸入，所以用 Ask User Question 內建的「Type something.」欄位貼上多列資料。</li>
-      <li>先解析、再套用。成功、重複、缺值、無法識別四類要分開列出，不能默默略過。</li>
-      <li>對照表尺寸還要與 COL-L 幾何交叉比對；不一致的柱標為「資料矛盾」，不進入交易。</li>
-      <li>80x60 與 60x80 分別正規化為 W80 H60 與 W60 H80，不自動互換。</li>
+      <li>這張圖的 A5-COL 本身就是尺寸標籤，也適用 Q4 = 2（Curve + 尺寸標籤）。這裡選 3 是為了示範 Q6。</li>
+      <li>先解析、再套用。成功、重複、缺值、無法識別四類要分開列出，本次重複 1 筆（C15）。</li>
+      <li>對照表還要與 COL-L 幾何交叉比對：C9、C12 的標籤與量測不一致，列為「資料矛盾」，不進入交易。</li>
+      <li>90x110 與 110x90 是不同類型，不自動互換。</li>
     </ul>
   </div>
 </section>
@@ -253,28 +257,42 @@ C7,6Ox80</span></div>
   </dl>
   <div class="term">
     <div class="bar"><i></i><i></i><i></i><span>claude — Ask User Question · Q9</span></div>
-    <div class="body"><pre><span class="dot">建立前預覽（樓層：2F · 視圖：2F 結構平面 · 尚未修改 Revit 模型）</span>
-<pre>  建立  位置  柱編號  幾何  圖面尺寸  帶入尺寸  族群類型     狀態
-  <span class="g">✔</span>     A1    C1      矩形  60x80     60x80     C60x80cm     <span class="g">已配對</span>
-  <span class="g">✔</span>     A2    C2      矩形  80x60     80x60     C80x60cm     <span class="g">已配對</span>
-  <span class="g">✔</span>     C3    C4      圓形  D70       R70       C-R70cm      <span class="g">已配對</span>
-  <span class="d">…其餘 12 根已配對</span>
-  <span class="r">✘</span>     B3    C3      矩形  70x75     70x70     C70x70cm     <span class="y">資料矛盾</span>
-  <span class="r">✘</span>     C5    C5      矩形  50x50     50x50     —            <span class="y">無類型</span>
-  <span class="r">✘</span>     D4    —       矩形  60x80     —           —            <span class="y">無編號</span>
-  <span class="r">✘</span>     D5    —       —     —         —           —            <span class="r">排除</span>  輪廓未封閉</pre>
+    <div class="body"><pre><span class="dot">建立前預覽（尚未修改 Revit 模型）</span>
+<pre>  go  pos     id    measured   table      family type    status
+  <span class="g">✔</span>   X1-Y1   C17   100x100    100x100    C100x100cm     <span class="g">paired</span>
+  <span class="g">✔</span>   X2-Y1   C18    90x120     90x120    C90x120cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X3-Y1   C19    90x120     90x120    C90x120cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X4-Y1   C20    90x115     90x115    C90x115cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X1-Y2   C13    90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X2-Y2   C14    90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X3-Y2   C15   100x100    100x100    C100x100cm     <span class="g">paired</span>
+  <span class="g">✔</span>   X4-Y2   C16    90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="r">✘</span>   X1-Y3   C9     90x90     100x90     -              <span class="y">conflict</span>
+  <span class="g">✔</span>   X2-Y3   C10   110x90     110x90     C110x90cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X3-Y3   C11   110x90     110x90     C110x90cm      <span class="g">paired</span>
+  <span class="r">✘</span>   X4-Y3   C12   110x90     100x90     -              <span class="y">conflict</span>
+  <span class="g">✔</span>   X1-Y4   C5     90x105     90x105    C90x105cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X2-Y4   C6     90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X3-Y4   C7    110x90     110x90     C110x90cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X4-Y4   C8     90x105     90x105    C90x105cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X1-Y5   C1    110x90     110x90     C110x90cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X2-Y5   C2     90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X3-Y5   C3     90x110     90x110    C90x110cm      <span class="g">paired</span>
+  <span class="g">✔</span>   X4-Y5   C4     90x110     90x110    C90x110cm      <span class="g">paired</span></pre>
 <span class="dot">最終摘要</span>
-<pre>  準備建立     <span class="g">15</span>   C60x80cm ×8 · C80x60cm ×4 · C70x70cm ×2 · C-R70cm ×1
-  人工複核      <span class="y">2</span>   B3 資料矛盾、D4 無編號
-  無類型略過    <span class="y">1</span>   C5：專案內沒有 C50x50cm
-  排除          <span class="r">1</span>   D5：輪廓未封閉
-  寫入參數          Q7 = 是 · Q8 = 標記 (Mark)，寫入 15 根</pre></pre>
+<pre>  準備建立     <span class="g">18</span>   C90x110cm ×7 · C110x90cm ×4 · C100x100cm ×2
+                     C90x120cm ×2 · C90x105cm ×2 · C90x115cm ×1
+  人工複核      <span class="y">2</span>   C9、C12 資料矛盾（尺寸待確認）
+  標籤例外      <span class="y">1</span>   C15 重複標籤 Handle 1086，不影響建立
+  排除          0
+  寫入參數          Q7 = 是 · Q8 = 標記 (Mark)，寫入 18 根 <span class="d">[Revit 端示範]</span></pre>
+<span class="res">PositionKey 以格網欄 X1～X4、列 Y1～Y5 暫代；匯出未含 AXIS 圖層，無法產生 A1、B2 軸線名稱。</span></pre>
       <div class="auq" data-q="q9">
         <div class="tabs"><span class="chip done">☒ 是否寫入</span><span class="chip done">☒ 寫入欄位</span><span class="chip">☐ 最終確認</span></div>
         <div class="q">是否依預覽結果建立結構柱？</div>
         <div class="opts">
-          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 建立</span><span class="desc">開啟 Transaction，建立 15 根結構柱並寫入「標記」；其餘 4 根不建立</span></div>
-          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回修正</span><span class="desc">回到資料對照，處理 B3 矛盾、D4 無編號或補建 C50x50cm 類型</span></div>
+          <div class="opt sel" tabindex="0"><span class="ptr">❯</span><span class="lbl">1. 建立</span><span class="desc">開啟 Transaction，建立 18 根結構柱並寫入「標記」；C9、C12 不建立</span></div>
+          <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">2. 返回修正</span><span class="desc">先確認 C9、C12 的正確尺寸，修正後重新預覽</span></div>
           <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">3. 取消</span><span class="desc">結束流程，不修改模型，保留分析結果與 Decision Log</span></div>
           <div class="opt" tabindex="0"><span class="ptr">❯</span><span class="lbl">4. Type something.</span><span class="desc">輸入其他指示</span></div>
         </div>
@@ -287,10 +305,10 @@ C7,6Ox80</span></div>
   <div class="notes">
     <h3>教學重點</h3>
     <ul>
-      <li>Q9 之前一定要先顯示預覽與摘要，使用者看得到會建立什麼、不會建立什麼。</li>
-      <li>選項說明直接寫出後果（建立幾根、寫入哪個欄位），避免使用者猜測。</li>
+      <li>Q9 之前要先顯示完整預覽與摘要，20 根柱逐列可追溯到 PositionKey、柱編號與尺寸來源。</li>
+      <li>選項說明直接寫出後果：建立 18 根、寫入「標記」、C9 與 C12 不建立。</li>
       <li>只有選「建立」才開啟 Transaction；「返回修正」與「取消」都不能修改模型。</li>
-      <li>資料矛盾、無類型、無編號、排除的柱不會被計入成功。</li>
+      <li>族群類型名稱依 C{W}x{H}cm 規則推得；Revit 專案中是否存在，需在 Revit 端掃描 FamilySymbol 後才能確認。</li>
     </ul>
   </div>
 </section>
@@ -299,28 +317,28 @@ C7,6Ox80</span></div>
 <section class="scene" id="log">
   <div>
     <div class="eyebrow">第 9 節範本</div>
-    <h2>本次模擬的 Decision Log</h2>
+    <h2>本次的 Decision Log</h2>
   </div>
   <div class="tablewrap">
   <table class="log">
     <thead><tr><th>決策項目</th><th>使用者選擇</th><th>來源 / 識別碼</th><th>狀態</th></tr></thead>
     <tbody>
-      <tr><td>作用中視圖</td><td>2F 結構平面</td><td>ViewId 305118 / GenLevel 2F</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q1 DWG 來源</td><td>S-2F結構平面.dwg</td><td>ImportInstanceId 412587</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q2 柱線圖層</td><td>COL-L</td><td>Layer Name</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q3 柱編號圖層</td><td>AN-COL</td><td>Layer Name</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>作用中視圖</td><td>—</td><td>ViewId / GenLevel</td><td><span class="pill w">待 Revit 掃描</span></td></tr>
+      <tr><td>Q1 DWG 來源</td><td>COLDUMP 匯出之 DWG</td><td>ImportInstanceId</td><td><span class="pill w">待 Revit 掃描</span></td></tr>
+      <tr><td>Q2 柱線圖層</td><td>COL-L</td><td>80 LINE → 20 封閉矩形</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q3 柱編號圖層</td><td>AN-COL</td><td>21 TEXT，配對 20/20，C15 重複 1</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q4 尺寸來源</td><td>Curve + 對照表</td><td>Mapping</td><td><span class="pill">已確認</span></td></tr>
       <tr><td>Q5 尺寸圖層</td><td>—</td><td>Q4 ≠ 2，不顯示</td><td><span class="pill w">略過</span></td></tr>
-      <tr><td>Q6 對照表</td><td>貼上 8 列</td><td>成功 5／重複 1／缺值 1／無法識別 1；A5-COL 交叉比對</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q7 寫入柱編號</td><td>是</td><td>—</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q8 寫入欄位</td><td>標記 (Mark)</td><td>Parameter Name</td><td><span class="pill">已確認</span></td></tr>
-      <tr><td>Q9 最終建立</td><td>建立</td><td>15 根進入 Transaction</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q6 對照表</td><td>由 AN-COL + A5-COL 產生</td><td>成功 20／重複 1；矛盾 C9、C12</td><td><span class="pill">已確認</span></td></tr>
+      <tr><td>Q7 寫入柱編號</td><td>是</td><td>—</td><td><span class="pill w">示範</span></td></tr>
+      <tr><td>Q8 寫入欄位</td><td>標記 (Mark)</td><td>Parameter Name</td><td><span class="pill w">示範</span></td></tr>
+      <tr><td>Q9 最終建立</td><td>建立</td><td>18 根進入 Transaction</td><td><span class="pill w">示範</span></td></tr>
     </tbody>
   </table>
   </div>
 </section>
 
-<footer>依據：5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱（第 3、4、7、9 節）。所有數值為教學範例。</footer>
+<footer>依據：5.1.3 透過 MCP 依 DWG 平面建立 Revit 結構柱（第 3、4、7、9 節）。DWG 資料來源：COLDUMP 匯出 CSV（COL-L 80、AN-COL 21、A5-COL 21 筆）；逐柱結果見 repo 的 docs/col_preview.csv。</footer>
 </div>
 
 <script>
