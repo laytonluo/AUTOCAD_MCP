@@ -1,6 +1,6 @@
 # 範例輸入（2F 結構平面，COLDUMP 匯出）
 
-把下列內容貼到 `revit_analyze.cs` 的輸入區塊，可直接測試 Q3 = AN-COL、Q4 = 尺寸標籤（A5-COL）。
+把下列內容貼到 `revit_analyze.cs` 的輸入區塊，可直接測試 Q4 = AN-COL、Q5 = 尺寸標籤、Q6 = A5-COL。
 
 ```csharp
     const string COL_LAYER = "COL-L";

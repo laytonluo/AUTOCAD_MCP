@@ -1,4 +1,4 @@
-// revit_analyze.cs — 唯讀。柱線封閉環分析、柱編號／尺寸配對、族群類型比對、建立前預覽。不開 Transaction。
+// revit_analyze.cs — 唯讀（Q7 之後、Q8 之前執行）。柱線封閉環分析、柱編號／尺寸配對、族群類型比對、建立前預覽。不開 Transaction。
 // 只修改「輸入」區塊。文字座標為 AutoCAD 的 DWG 座標（WCS）。
 // Revit 2023 以前：new ElementId(xxxL) 改成 new ElementId((int)xxx)，.Id.Value 改成 .Id.IntegerValue。
 using System;
@@ -15,11 +15,11 @@ public static class DwgColAnalyze
     const long VIEW_ID = 347452;
     const long IMPORT_ID = 351751;
     const string COL_LAYER = "COL-L";
-    // 柱編號文字：「內容|X|Y」；Q3 選「不使用」時留空陣列
+    // 柱編號文字（Q4）：「內容|X|Y」；選「不使用」時留空陣列
     static readonly string[] ID_LABELS = {
         // "C1|-15025.7432|-79524.8293",
     };
-    // 尺寸來源：curve / tag / table
+    // 尺寸來源（Q5）：curve＝底圖柱線 / tag＝尺寸標籤 / table＝對照表
     const string SIZE_SOURCE = "table";
     // SIZE_SOURCE = tag：尺寸文字「內容|X|Y」
     static readonly string[] SIZE_LABELS = {
@@ -164,7 +164,7 @@ public static class DwgColAnalyze
 
         // ---- 7. 組合預覽 ----
         double rotInst = Math.Atan2(instTf.BasisX.Y, instTf.BasisX.X);
-        var rows = new List<string>();
+        var rows = new List<Tuple<string, string>>();   // (柱編號, JSON)
         var commit = new List<string>();
         var count = new SortedDictionary<string, int>();
         var typeCount = new SortedDictionary<string, int>();
@@ -202,12 +202,12 @@ public static class DwgColAnalyze
                 typeCount[fs.Name] = (typeCount.ContainsKey(fs.Name) ? typeCount[fs.Name] : 0) + 1;
                 commit.Add(fs.Id.Value + "|" + J.N(proj[c].X) + "|" + J.N(proj[c].Y) + "|" + J.N(rot) + "|" + colId);
             }
-            rows.Add("{\"create\":" + (go ? "true" : "false") + ",\"pos\":" + J.Q(pos) + ",\"id\":" + J.Q(colId)
+            rows.Add(Tuple.Create(colId, "{\"create\":" + (go ? "true" : "false") + ",\"pos\":" + J.Q(pos) + ",\"id\":" + J.Q(colId)
                 + ",\"geom\":" + J.Q(L.Kind == "rect" ? "矩形" : L.Kind == "circle" ? "圓形" : "人工複核")
                 + ",\"measured\":" + J.Q(meas == null ? "" : Fmt(meas)) + ",\"source\":" + J.Q(use == null ? "" : Fmt(use))
                 + ",\"type\":" + J.Q(fs == null ? "" : fs.FamilyName + ": " + fs.Name) + ",\"level\":" + J.Q(level.Name)
                 + ",\"status\":" + J.Q(status) + ",\"msg\":" + J.Q(msg)
-                + ",\"idDist_mm\":" + (idDist < 0 ? "null" : J.N(idDist)) + "}");
+                + ",\"idDist_mm\":" + (idDist < 0 ? "null" : J.N(idDist)) + "}"));
         }
         var unusedIds = ids.Where((l, i) => colOfId[i] < 0).Select(l => J.Q(l.T));
 
@@ -221,7 +221,9 @@ public static class DwgColAnalyze
         sb.Append(",\"unusedSizeLabels\":[").Append(string.Join(",", unusedTags.Select(t => J.Q(t.T)))).Append("]");
         sb.Append(",\"tableParse\":[").Append(string.Join(",", tableReport)).Append("]");
         sb.Append(",\"availableTypes\":[").Append(string.Join(",", symbols.Select(f => J.Q(f.Name)))).Append("]");
-        sb.Append(",\"rows\":[").Append(string.Join(",", rows)).Append("]");
+        // 依柱編號自然排序（C1、C2…C10），無編號排最後
+        var sorted = rows.OrderBy(r => r.Item1 == "" ? 1 : 0).ThenBy(r => Regex.Replace(r.Item1, @"\d+", m => m.Value.PadLeft(8, '0')), StringComparer.OrdinalIgnoreCase);
+        sb.Append(",\"rows\":[").Append(string.Join(",", sorted.Select(r => r.Item2))).Append("]");
         sb.Append(",\"commitRows\":[").Append(string.Join(",", commit.Select(J.Q))).Append("]}");
         return sb.ToString();
     }

@@ -1,4 +1,4 @@
-// revit_commit.cs — 會修改模型。只有在 Q9 回答「建立」之後才可執行。
+// revit_commit.cs — 會修改模型。只有在 Q10 回答「建立」之後才可執行。
 // 輸入來自 revit_analyze.cs 的 level.id 與 commitRows。
 // Revit 2023 以前：new ElementId(xxxL) 改成 new ElementId((int)xxx)，.Id.Value 改成 .Id.IntegerValue。
 using System;
@@ -16,7 +16,7 @@ public static class DwgColCommit
     // 「FamilySymbolId|X(ft)|Y(ft)|旋轉(rad)|柱編號」，直接貼上 commitRows
     static readonly string[] ROWS = {
     };
-    const string MARK_PARAM = "";   // Q7 = 否 時留空；否則填 Q8 選定的參數名稱（例如「標記」或 "Mark"）
+    const string MARK_PARAM = "";   // Q8 = 否 時留空；否則填 Q9 選定的參數名稱（例如「標記」或 "Mark"）
     // ================
 
     public static string Execute(Document doc)

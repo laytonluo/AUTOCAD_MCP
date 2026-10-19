@@ -1,4 +1,4 @@
-// revit_params.cs — 唯讀。列出結構柱可寫入的字串實例參數（Q8 選項來源）。不開 Transaction。
+// revit_params.cs — 唯讀。列出結構柱可寫入的字串實例參數（Q9 選項來源）。不開 Transaction。
 using System;
 using System.Collections.Generic;
 using System.Linq;

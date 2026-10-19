@@ -1,5 +1,5 @@
-// revit_scan.cs — 唯讀。確認視圖與 ImportInstance，列出 DWG 圖層與曲線數。不開 Transaction。
-// Revit 2023 以前：把 new ElementId(xxxL) 改成 new ElementId((int)xxx)，.Value 改成 .IntegerValue。
+// revit_scan.cs — 唯讀。Q1 作業視圖、Q2 DWG 圖面、Q3 圖層清單的資料來源。不開 Transaction。
+// Revit 2023 以前：new ElementId(xxxL) 改成 new ElementId((int)xxx)，.Value 改成 .IntegerValue。
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,50 +9,62 @@ using Autodesk.Revit.DB;
 public static class DwgColScan
 {
     // ===== 輸入 =====
-    const long VIEW_ID = 347452;
-    const long IMPORT_ID = 351751;
+    const string VIEW_KEY = "";     // 空白＝目前作用中視圖；或填視圖名稱／ElementId
+    const string IMPORT_KEY = "";   // 空白＝只列出 DWG；或填 DWG 名稱／ElementId 以取得圖層
     // ================
 
     public static string Execute(Document doc)
     {
-        Element a = doc.GetElement(new ElementId(VIEW_ID));
-        Element b = doc.GetElement(new ElementId(IMPORT_ID));
-        bool swapped = false;
-        if (a is ImportInstance && b is View) { Element t = a; a = b; b = t; swapped = true; }
-
-        View view = a as View;
-        ImportInstance ii = b as ImportInstance;
         var sb = new StringBuilder("{");
-        sb.Append("\"swapped\":").Append(swapped ? "true" : "false");
+        View view = FindView(doc, VIEW_KEY);
+        if (view == null) return "{\"error\":\"找不到視圖：" + (VIEW_KEY == "" ? "（目前作用中視圖）" : VIEW_KEY) + "\"}";
 
-        if (view == null) return sb.Append(",\"error\":\"找不到視圖 ").Append(VIEW_ID).Append("\"}").ToString();
         Level lv = view.GenLevel;
-        bool isPlan = view.ViewType == ViewType.FloorPlan || view.ViewType == ViewType.EngineeringPlan
-                      || view.ViewType == ViewType.CeilingPlan || view.ViewType == ViewType.AreaPlan;
-        sb.Append(",\"view\":{\"id\":").Append(view.Id.Value)
+        bool isPlan = (view.ViewType == ViewType.FloorPlan || view.ViewType == ViewType.EngineeringPlan) && lv != null;
+        sb.Append("\"view\":{\"id\":").Append(view.Id.Value)
           .Append(",\"name\":").Append(J.Q(view.Name))
           .Append(",\"viewType\":").Append(J.Q(view.ViewType.ToString()))
-          .Append(",\"isPlan\":").Append(isPlan && lv != null ? "true" : "false");
+          .Append(",\"isActive\":").Append(doc.ActiveView != null && doc.ActiveView.Id == view.Id ? "true" : "false")
+          .Append(",\"isPlan\":").Append(isPlan ? "true" : "false");
         if (lv != null)
             sb.Append(",\"genLevel\":{\"id\":").Append(lv.Id.Value).Append(",\"name\":").Append(J.Q(lv.Name))
               .Append(",\"elevation_m\":").Append(J.N(lv.Elevation * 0.3048)).Append("}");
         sb.Append("}");
 
-        // 視圖中所有 ImportInstance
+        // 視圖中的 DWG（Q2 選項）
         var imports = new FilteredElementCollector(doc, view.Id).OfClass(typeof(ImportInstance)).Cast<ImportInstance>().ToList();
         sb.Append(",\"importsInView\":[");
         sb.Append(string.Join(",", imports.Select(x =>
             "{\"id\":" + x.Id.Value + ",\"name\":" + J.Q(ImportName(doc, x)) + ",\"linked\":" + (x.IsLinked ? "true" : "false") + "}")));
         sb.Append("]");
 
-        if (ii == null) return sb.Append(",\"error\":\"找不到 ImportInstance ").Append(IMPORT_ID).Append("\"}").ToString();
-        bool inView = imports.Any(x => x.Id == ii.Id);
+        // 其他含 DWG 的平面視圖（Q1 選項 2～3）
+        var otherPlans = new FilteredElementCollector(doc).OfClass(typeof(ViewPlan)).Cast<ViewPlan>()
+            .Where(v => !v.IsTemplate && v.Id != view.Id && v.GenLevel != null
+                        && (v.ViewType == ViewType.FloorPlan || v.ViewType == ViewType.EngineeringPlan))
+            .Select(v => new { v, n = new FilteredElementCollector(doc, v.Id).OfClass(typeof(ImportInstance)).GetElementCount() })
+            .Where(x => x.n > 0).OrderBy(x => x.v.Name).Take(5).ToList();
+        sb.Append(",\"otherPlansWithDwg\":[");
+        sb.Append(string.Join(",", otherPlans.Select(x =>
+            "{\"id\":" + x.v.Id.Value + ",\"name\":" + J.Q(x.v.Name) + ",\"level\":" + J.Q(x.v.GenLevel.Name) + ",\"dwgCount\":" + x.n + "}")));
+        sb.Append("]");
+
+        if (IMPORT_KEY == "") return sb.Append("}").ToString();
+
+        ImportInstance ii = imports.FirstOrDefault(x => x.Id.Value.ToString() == IMPORT_KEY.Trim()
+                                                    || ImportName(doc, x) == IMPORT_KEY.Trim());
+        if (ii == null)
+        {
+            long n;
+            if (long.TryParse(IMPORT_KEY.Trim(), out n)) ii = doc.GetElement(new ElementId(n)) as ImportInstance;
+        }
+        if (ii == null) return sb.Append(",\"error\":").Append(J.Q("找不到 DWG：" + IMPORT_KEY)).Append("}").ToString();
         sb.Append(",\"import\":{\"id\":").Append(ii.Id.Value)
           .Append(",\"name\":").Append(J.Q(ImportName(doc, ii)))
           .Append(",\"linked\":").Append(ii.IsLinked ? "true" : "false")
-          .Append(",\"inView\":").Append(inView ? "true" : "false").Append("}");
+          .Append(",\"inView\":").Append(imports.Any(x => x.Id == ii.Id) ? "true" : "false").Append("}");
 
-        // 圖層統計（symbol geometry，含巢狀圖塊）
+        // 圖層統計（Q3 選項）
         var layers = new SortedDictionary<string, int[]>(); // [line, polyline, arc, circle]
         foreach (var g in DwgGeom.Collect(doc, ii))
         {
@@ -68,6 +80,20 @@ public static class DwgColScan
             ",\"arc\":" + kv.Value[2] + ",\"circle\":" + kv.Value[3] + "}")));
         sb.Append("]}");
         return sb.ToString();
+    }
+
+    static View FindView(Document doc, string key)
+    {
+        key = (key ?? "").Trim();
+        if (key == "") return doc.ActiveView;
+        long n;
+        if (long.TryParse(key, out n))
+        {
+            var v = doc.GetElement(new ElementId(n)) as View;
+            if (v != null) return v;
+        }
+        return new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+            .FirstOrDefault(v => !v.IsTemplate && v.Name == key);
     }
 
     static string ImportName(Document doc, ImportInstance x)
