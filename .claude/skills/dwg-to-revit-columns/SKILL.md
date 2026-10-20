@@ -1,6 +1,6 @@
 ---
 name: dwg-to-revit-columns
-description: 依 Revit 平面視圖中的 DWG（匯入或連結）建立結構柱。使用者輸入 /dwg-to-revit-columns 或要求「依 DWG 柱線翻模結構柱」時使用。流程依 5.1.3 操作文件：Revit MCP 掃描視圖與 DWG、AutoCAD MCP 讀取柱編號與尺寸文字，以 Ask User Question 逐題確認 Q1～Q10，列表確認後才建立柱。Use when the user invokes /dwg-to-revit-columns or asks to model structural columns from a DWG in Revit.
+description: 依 DWG 柱線在 Revit 平面視圖建立結構柱；DWG 可已匯入 Revit，或只在 AutoCAD 開啟（以軸線對齊座標）。使用者輸入 /dwg-to-revit-columns 或要求「依 DWG 柱線翻模結構柱」時使用。流程依 5.1.3 操作文件：Revit MCP 掃描視圖與 DWG、AutoCAD MCP 讀取柱編號與尺寸文字，以 Ask User Question 逐題確認 Q1～Q10，列表確認後才建立柱。Use when the user invokes /dwg-to-revit-columns or asks to model structural columns from a DWG in Revit.
 ---
 
 # DWG → Revit 結構柱（5.1.3 MCP 流程）
@@ -41,6 +41,13 @@ C# 範本說明：
 
 ## 流程
 
+### 步驟 0　讀取觀察（唯讀，不詢問）
+開始提問前，先用兩個 MCP 各自讀取一次，讓使用者看到兩邊的現況：
+1. **Revit MCP**：執行 `scripts/revit_scan.cs`（`VIEW_KEY = ""`），回報目前視圖名稱、類型、樓層、視圖中的 DWG、視圖中的軸線名稱（例如 1～5、A～D）。
+2. **AutoCAD MCP**：回報目前開啟的檔名、INSUNITS、圖層列表，並標出可能的柱線、柱編號、尺寸、軸線、軸線編號圖層（附圖元數量與文字範例）。
+3. 用 5～8 行中文摘要兩邊觀察結果，並指出：DWG 是否已匯入 Revit、兩邊軸線名稱是否一致。
+4. 任一 MCP 無法使用時，說明影響並繼續可進行的部分。
+
 ### Q1／10　作業視圖
 1. 以 `scripts/revit_scan.cs`（`VIEW_KEY = ""`）讀取目前作用中視圖：名稱、ElementId、類型、樓層（GenLevel）。
 2. Ask User Question「請確認作業視圖」：
@@ -52,9 +59,25 @@ C# 範本說明：
 ### Q2／10　DWG 圖面
 1. 由 `revit_scan.cs` 結果取得該視圖中所有 ImportInstance。視圖中沒有 DWG → 回報並回到 Q1。
 2. Ask User Question「請確認要使用的 DWG 圖面」：
-   - 最多 3 個選項，label 為「DWG 名稱 #ElementId」，說明寫「連結／匯入、圖層數、柱線候選圖層」。只有一個時放第一個並標「（建議）」，再加一個「返回 Q1 改選視圖」。
+   - 選項：視圖中的 DWG（最多 2 個，label「DWG 名稱 #ElementId」，說明寫「連結／匯入、圖層數」），以及「AutoCAD 目前開啟的圖面：〈檔名〉」（說明寫「DWG 未匯入 Revit，以軸線對齊座標」）。依步驟 0 的觀察把較合適的一項放第一個並標「（建議）」。
    - 使用者可在「其他」輸入 DWG 名稱或 ElementId。
-3. 以 `IMPORT_KEY` 填入選定項目再執行一次 `revit_scan.cs`，取得該 DWG 的圖層與曲線數。顯示 Decision Log。
+3. **已匯入 Revit 的 DWG**：以 `IMPORT_KEY` 填入選定項目再執行一次 `revit_scan.cs`，取得圖層與曲線數。之後 Q3 的圖層來自 Revit 掃描，分析使用 `revit_analyze.cs`。
+4. **AutoCAD 圖面（CAD 模式）**：進行 Q2A、Q2B 軸線對齊。之後 Q3～Q7 的圖層全部來自 AutoCAD，分析使用 `revit_cad_analyze.cs`。
+5. 顯示 Decision Log。
+
+### Q2A　軸線圖層（僅 CAD 模式）
+- 從 AutoCAD 圖層列表推薦：名稱含 AXIS、GRID、軸 的線圖層，以及含軸線編號文字或圖塊屬性的圖層。
+- Ask User Question「請選擇 CAD 的軸線圖層與軸線編號圖層」，每個選項是一組「軸線圖層／編號圖層」，說明寫「線數、編號範例」。
+
+### Q2B　軸線對齊確認（僅 CAD 模式）
+1. 以 AutoCAD MCP 執行 `(coldump-run '("軸線圖層" "軸線編號圖層" ...))`（先載入 `scripts/coldump.lsp`），一併匯出之後要用的柱線、柱編號、尺寸圖層也可以；記下 CSV 路徑。
+2. 執行 `scripts/revit_cad_analyze.cs`，`ALIGN_ONLY = true`，填入 CSV 路徑與軸線圖層。
+3. 摘要：CAD 軸線名稱、Revit 軸線名稱、對應到的交點數、旋轉角、比例檢查值、最大誤差（mm）。
+4. Ask User Question「請確認軸線對齊結果」：
+   - 「依軸線名稱對齊（建議）」：說明寫「N 個交點，最大誤差 x mm，旋轉 y°」
+   - 「返回 Q2A 改選軸線圖層」
+   - 名稱不一致時，請使用者在「其他」輸入對應，例如 `X1=1;Y1=A`，填入 `GRID_NAME_MAP` 後重跑。
+5. 規則：交點少於 2 個不得繼續；最大誤差超過 10 mm 或比例檢查值偏離 1 超過 0.5% 時，不放「（建議）」並說明風險。
 
 ### Q3／10　柱線圖層（必填）
 - 推薦：名稱含 COL、COLUMN、COLMN 且有 Line／PolyLine／Arc 的圖層；說明寫曲線數。
@@ -84,7 +107,10 @@ C# 範本說明：
 - 先列出解析結果：成功、重複（同值只採用一次，不同值列為矛盾）、缺值、無法識別，再進入分析。
 
 ### 資料對照（唯讀，不需詢問）
-以 `scripts/revit_analyze.cs` 執行，填入 Q1～Q7 的結果。程式會：
+- 已匯入 Revit：以 `scripts/revit_analyze.cs` 執行，填入 Q1～Q7 的結果。
+- CAD 模式：以 AutoCAD MCP 執行 `coldump-run` 匯出柱線、柱編號、尺寸圖層（與軸線圖層），再執行 `scripts/revit_cad_analyze.cs`，`ALIGN_ONLY = false`。柱中心經 Q2B 的轉換落到 Revit 座標。
+
+程式會：
 1. 讀取柱線圖層的 Line／PolyLine／Arc，以 1 mm 容差串接封閉環；矩形＝4 條直線且相鄰邊垂直，圓形＝封閉 Arc，其他列人工複核。
 2. 自動判斷 DWG 單位（mm／cm／m／inch／ft）並回報。
 3. 柱編號：柱質心到文字插入點最近且唯一，最大距離 2500 mm。
@@ -123,7 +149,8 @@ C# 範本說明：
 | 決策項目 | 使用者選擇 | 來源／識別碼 | 狀態 |
 |---|---|---|---|
 | Q1 作業視圖 | | ViewId／樓層 | 待確認 |
-| Q2 DWG 圖面 | | ImportInstanceId | 待確認 |
+| Q2 DWG 圖面 | | ImportInstanceId／AutoCAD 檔名 | 待確認 |
+| Q2A／Q2B 軸線對齊 | | 圖層／交點數／最大誤差 | 僅 CAD 模式 |
 | Q3 柱線圖層 | | 圖層名稱 | 待確認 |
 | Q4 柱編號圖層 | | 圖層名稱／不使用 | 待確認 |
 | Q5 尺寸來源 | | 柱線／尺寸標籤／對照表 | 待確認 |
@@ -134,6 +161,7 @@ C# 範本說明：
 
 ## 驗收（最終報告前自我檢查）
 - 建立樓層＝Q1 視圖的樓層。
+- CAD 模式：對齊交點 ≥ 2，最大誤差與比例檢查已向使用者報告。
 - 視圖、DWG、圖層、類型、參數名稱都來自掃描或使用者輸入。
 - 確認表筆數＝有效封閉輪廓數；同一標籤沒有分配給兩根柱。
 - 無類型、資料矛盾、排除不在成功數中。
